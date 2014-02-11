@@ -1,10 +1,14 @@
 package com.vaadin.chartwebinar.view;
 
+import com.vaadin.addon.charts.Chart;
+import com.vaadin.addon.charts.model.AxisType;
+import com.vaadin.addon.charts.model.ChartType;
+import com.vaadin.addon.charts.model.DataSeries;
+import com.vaadin.addon.charts.model.DataSeriesItem;
 import com.vaadin.cdi.CDIView;
 import com.vaadin.chartwebinar.backend.EngineService;
 import com.vaadin.chartwebinar.backend.TemperatureReading;
 import com.vaadin.ui.Component;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.UI;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -18,26 +22,30 @@ public class RealTimeView extends AbstractView {
     @Inject
     EngineService service;
 
-    Label main = new Label();
-    Label pre = new Label();
-    Label post = new Label();
+    DataSeries main = new DataSeries();
+    DataSeries pre = new DataSeries();
+    DataSeries post = new DataSeries();
+    Chart chart = new Chart(ChartType.SPLINE);
 
     @PostConstruct
     void setup() {
-        main.setCaption("@ engine");
-        pre.setCaption("@ pre-processing");
-        post.setCaption("@ post-processing");
+        chart.setCaption("All temperatures readings for last week:");
+        main.setName("@ Engine");
+        pre.setName("@ Pre processing");
+        post.setName("@ Post processing");
+        chart.getConfiguration().setSeries(main, pre, post);
+        chart.getConfiguration().getxAxis().setType(AxisType.DATETIME);
     }
 
     @Override
     protected Component buildContent() {
-        return new MVerticalLayout(main, pre, post);
+        return new MVerticalLayout(chart);
     }
 
     public void onTemperatureReading(TemperatureReading reading) {
         final UI ui = getUI();
         if (ui != null) {
-            final Label target;
+            final DataSeries target;
             switch (reading.getPlace()) {
                 case PREPROCESSING:
                     target = pre;
@@ -49,7 +57,8 @@ public class RealTimeView extends AbstractView {
                     target = main;
             }
             ui.access(() -> {
-                target.setValue(reading.getTemperature() + " (read " + reading.getDate() + ")");
+                boolean shift = target.size() > 4;
+                target.add(new DataSeriesItem(reading.getDate(), reading.getTemperature()), true, shift);
             });
         }
     }

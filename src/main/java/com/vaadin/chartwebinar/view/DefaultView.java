@@ -1,47 +1,54 @@
 package com.vaadin.chartwebinar.view;
 
+import com.vaadin.addon.charts.Chart;
+import com.vaadin.addon.charts.model.AxisType;
+import com.vaadin.addon.charts.model.DataSeries;
+import com.vaadin.addon.charts.model.DataSeriesItem;
 import com.vaadin.cdi.CDIView;
 import com.vaadin.chartwebinar.backend.EngineService;
 import com.vaadin.chartwebinar.backend.TemperatureReading;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.VerticalLayout;
+import java.util.Date;
+import java.util.Random;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import org.vaadin.maddon.layouts.MVerticalLayout;
 
 @CDIView
 public class DefaultView extends AbstractView {
-
-    VerticalLayout main = new MVerticalLayout();
-    VerticalLayout pre = new MVerticalLayout();
-    VerticalLayout post = new MVerticalLayout();
-    VerticalLayout layout = new MVerticalLayout(main, pre, post);
-
+    
+    DataSeries main = new DataSeries();
+    DataSeries pre = new DataSeries();
+    DataSeries post = new DataSeries();
+    Chart chart = new Chart();
+    
     @Inject
     private EngineService engineService;
     
     @PostConstruct
     void setup() {
-        layout.setCaption("All temperatures readings for last week:");
-        main.setCaption("@ Engine");
-        pre.setCaption("@ Pre processing");
-        post.setCaption("@ Post processing");
+        chart.setCaption("All temperatures readings for last week:");
+        main.setName("@ Engine");
+        pre.setName("@ Pre processing");
+        post.setName("@ Post processing");
+        chart.getConfiguration().setSeries(main, pre, post);
+        chart.getConfiguration().getxAxis().setType(AxisType.DATETIME);
+        chart.addChartClickListener(e->{
+            main.add(new DataSeriesItem(new Date(), e.getyAxisValue()));
+        });
         listReadings();
     }
-
+    
     @Override
     protected Component buildContent() {
-        return new CssLayout(layout);
+        return new CssLayout(chart);
     }
-
+    
     private void listReadings() {
-
+        
         for (TemperatureReading reading : engineService.getDailyReadings()) {
-            Label label = new Label(reading.toString());
-            VerticalLayout target;
-            switch(reading.getPlace()) {
+            DataSeries target;
+            switch (reading.getPlace()) {
                 case POSTPROCESSING:
                     target = post;
                     break;
@@ -52,9 +59,9 @@ public class DefaultView extends AbstractView {
                 default:
                     target = main;
             }
-
-            target.addComponent(label);
+            
+            target.add(new DataSeriesItem(reading.getDate(), reading.getTemperature()));
         }
     }
-
+    
 }
