@@ -1,6 +1,6 @@
 package com.vaadin.chartwebinar;
 
-import com.vaadin.annotations.Push;
+import com.vaadin.addon.charts.ChartOptions;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.cdi.CDIUI;
 import com.vaadin.cdi.CDIViewProvider;
@@ -20,7 +20,9 @@ public class ExampleUI extends UI {
 
     @Override
     public void init(VaadinRequest request) {
+        
         setPollInterval(500);
+        ChartOptions.get().setTheme(new MyCustomTheme());
         
         VerticalLayout navigatorLayout = new MVerticalLayout().withFullHeight();
 
